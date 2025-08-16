@@ -250,7 +250,7 @@ digtron.tap_batteries = function(battery_positions, target, test)
 	-- setting Moved to digtron.config.power_ratio
 
 	for _, location in pairs(battery_positions) do
-		if current_burned > target then
+		if current_burned >= target then
 			break
 		end
 		node_inventory_table.pos = location.pos
@@ -265,17 +265,17 @@ digtron.tap_batteries = function(battery_positions, target, test)
 			if minetest.global_exists("technic") then
 				local power_available = math.floor(technic.get_charge(itemstack) / digtron.config.power_ratio)
 				if power_available ~= 0 then
-					local actual_burned = power_available -- we just take all we have from the battery, since they aren't stackable
+					-- we take only what's necessary to reach target power
+					local actual_burned = math.min(power_available, (target - current_burned))
 					-- don't bother recording the items if we're just testing, nothing is actually being removed.
 					if test ~= true then
-						-- since we are taking everything, the wear and charge can both be set to 0
-						technic.set_charge(itemstack, 0)
+						technic.set_charge(itemstack, (power_available - actual_burned) * digtron.config.power_ratio)
 					end
 					current_burned = current_burned + actual_burned
 				end
 			end
 
-			if current_burned > target then
+			if current_burned >= target then
 				break
 			end
 		end
